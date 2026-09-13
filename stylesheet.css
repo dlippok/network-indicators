@@ -1,0 +1,46 @@
+.panel-button {
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.latency-graph {
+    width: 307px;
+    min-width: 307px;
+    min-height: 66px;
+    spacing: 3px;
+    padding: 4px 0;
+}
+
+.latency-measurement {
+    width: 28px;
+    spacing: 2px;
+}
+
+.latency-bar {
+    width: 28px;
+    min-height: 4px;
+    background-color: -st-accent-color;
+    border-radius: 2px 2px 0 0;
+}
+
+.latency-bar.latency-good {
+    background-color: -st-accent-color;
+}
+
+.latency-bar.latency-warning {
+    background-color: #f9d71c;
+}
+
+.latency-bar.latency-bad {
+    background-color: #ff6b6b;
+}
+
+.latency-bar.latency-offline {
+    background-color: #888888;
+}
+
+.latency-label {
+    width: 28px;
+    font-size: 9px;
+    text-align: center;
+}

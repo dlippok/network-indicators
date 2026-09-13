@@ -1,0 +1,12 @@
+{
+  "uuid": "network-indicators@dlippok.github.io",
+  "name": "Network Indicators",
+  "description": "Displays host, IP address, gateway, and network latency information in the GNOME Shell top panel.",
+  "version": 2,
+  "shell-version": [
+    "45",
+    "46",
+    "47",
+    "50"
+  ]
+}
