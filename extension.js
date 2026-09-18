@@ -6,7 +6,6 @@ import St from 'gi://St';
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
-import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 const NetworkIndicators = GObject.registerClass(
@@ -36,55 +35,46 @@ class NetworkIndicators extends PanelMenu.Button {
         this._latencyHistory = [];
         this._ipAddress = null;
         this._gatewayAddress = null;
-        this._networkNameItem = new PopupMenu.PopupImageMenuItem(
+        this._networkNameRow = this._createInfoRow(
             GLib.get_host_name(),
-            null,
+            'network-name-symbolic.svg',
         );
-        this._setMenuIcon(this._networkNameItem, 'network-name-symbolic.svg');
-        this._networkNameItem.setSensitive(false);
-        this._ipAddressItem = new PopupMenu.PopupImageMenuItem(
+        this._ipAddressRow = this._createInfoRow(
             '--',
-            null,
+            'ip-address-symbolic.svg',
         );
-        this._setMenuIcon(this._ipAddressItem, 'ip-address-symbolic.svg');
-        this._ipAddressItem.setSensitive(false);
-        this._externalIpAddressItem = new PopupMenu.PopupImageMenuItem(
+        this._externalIpAddressRow = this._createInfoRow(
             '--',
-            null,
+            'external-ip-symbolic.svg',
         );
-        this._externalIpAddressItem.setSensitive(false);
-        this._setMenuIcon(this._externalIpAddressItem, 'external-ip-symbolic.svg');
-        this._gatewayItem = new PopupMenu.PopupImageMenuItem(
+        this._gatewayRow = this._createInfoRow(
             '--',
-            null,
+            'gateway-symbolic.svg',
         );
-        this._setMenuIcon(this._gatewayItem, 'gateway-symbolic.svg');
-        this._gatewayItem.setSensitive(false);
-        this._latencyItem = new PopupMenu.PopupImageMenuItem(
+        this._latencyRow = this._createInfoRow(
             '--',
-            null,
+            'latency-symbolic.svg',
         );
-        this._setMenuIcon(this._latencyItem, 'latency-symbolic.svg');
-        this._latencyItem.setSensitive(false);
-        this._latencyGraphItem = new PopupMenu.PopupBaseMenuItem({
-            reactive: false,
-            can_focus: false,
-        });
         this._latencyGraph = new St.BoxLayout({
-            style_class: 'latency-graph',
+            style_class: 'popup-menu-item latency-graph',
             x_expand: true,
             y_align: Clutter.ActorAlign.END,
         });
-        this._latencyGraphItem.add_child(this._latencyGraph);
-        this._latencyGraphItem.setSensitive(false);
-        this.menu.addMenuItem(this._networkNameItem);
-        this.menu.addMenuItem(this._externalIpAddressItem);
-        this.menu.addMenuItem(this._ipAddressItem);
-        this.menu.addMenuItem(this._gatewayItem);
-        this.menu.addMenuItem(this._latencyItem);
-        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-        this.menu.addMenuItem(this._latencyGraphItem);
-        
+        this._separator = new St.BoxLayout({
+            style_class: 'popup-menu-item popup-separator-menu-item',
+            x_expand: true,
+        });
+        this._separator.add_child(new St.Widget({
+            style_class: 'popup-separator-menu-item-separator',
+            x_expand: true,
+        }));
+        this.menu.box.add_child(this._networkNameRow);
+        this.menu.box.add_child(this._externalIpAddressRow);
+        this.menu.box.add_child(this._ipAddressRow);
+        this.menu.box.add_child(this._gatewayRow);
+        this.menu.box.add_child(this._latencyRow);
+        this.menu.box.add_child(this._separator);
+        this.menu.box.add_child(this._latencyGraph);
     }
 
     startNetworkRefresh() {
@@ -117,48 +107,67 @@ class NetworkIndicators extends PanelMenu.Button {
 
         if (ipResult.status === 'fulfilled') {
             this._ipAddress = ipResult.value;
-            this._ipAddressItem.label.text = ipResult.value;
+            this._ipAddressRow.label.text = ipResult.value;
         } else {
             this._ipAddress = null;
-            this._ipAddressItem.label.text = 'unavailable';
-            this._ipAddressItem.setSensitive(false);
+            this._ipAddressRow.label.text = 'unavailable';
             logError(ipResult.reason, 'Failed to retrieve current IP address');
         }
 
         if (externalIpResult.status === 'fulfilled')
-            this._externalIpAddressItem.label.text = externalIpResult.value;
+            this._externalIpAddressRow.label.text = externalIpResult.value;
         else {
-            this._externalIpAddressItem.label.text = 'unavailable';
+            this._externalIpAddressRow.label.text = 'unavailable';
             logError(externalIpResult.reason, 'Failed to retrieve external IP address');
         }
 
         if (gatewayResult.status === 'fulfilled') {
             this._gatewayAddress = gatewayResult.value;
-            this._gatewayItem.label.text = this._gatewayAddress;
+            this._gatewayRow.label.text = this._gatewayAddress;
         } else {
             this._gatewayAddress = null;
-            this._gatewayItem.label.text = 'unavailable';
-            this._gatewayItem.setSensitive(false);
+            this._gatewayRow.label.text = 'unavailable';
             logError(gatewayResult.reason, 'Failed to retrieve default gateway');
         }
 
         if (latencyResult.status === 'fulfilled') {
-            this._latencyItem.label.text = `${latencyResult.value} ms`;
-            this._speedometerIcon.gicon = this._getSpeedometerIcon(latencyResult.value);
+            this._latencyRow.label.text = `${latencyResult.value} ms`;
             this._latencyHistory.push({
                 latency: Number.parseFloat(latencyResult.value),
                 offline: false,
             });
             this._latencyHistory = this._latencyHistory.slice(-10);
+            this._updateSpeedometerIcon();
             this._updateLatencyGraph();
         } else {
-            this._latencyItem.label.text = 'unavailable';
-            this._speedometerIcon.gicon = this._getIcon('network-offline-symbolic.svg');
+            this._latencyRow.label.text = 'unavailable';
             this._latencyHistory.push({offline: true});
             this._latencyHistory = this._latencyHistory.slice(-10);
+            this._updateSpeedometerIcon();
             this._updateLatencyGraph();
             logError(latencyResult.reason, 'Failed to retrieve network latency');
         }
+    }
+
+    _updateSpeedometerIcon() {
+        const latestMeasurement =
+            this._latencyHistory[this._latencyHistory.length - 1];
+        if (latestMeasurement.offline) {
+            this._speedometerIcon.gicon = this._getIcon('network-offline-symbolic.svg');
+            return;
+        }
+
+        if (this._latencyHistory
+            .slice(0, -1)
+            .some(measurement => measurement.offline)) {
+            this._speedometerIcon.gicon = this._getIcon('network-bad-symbolic.svg');
+            return;
+        }
+
+        const worstLatency = Math.max(
+            ...this._latencyHistory.map(measurement => measurement.latency),
+        );
+        this._speedometerIcon.gicon = this._getSpeedometerIcon(worstLatency);
     }
 
     _updateLatencyGraph() {
@@ -183,14 +192,26 @@ class NetworkIndicators extends PanelMenu.Button {
                 style_class: 'latency-measurement',
                 y_align: Clutter.ActorAlign.END,
             });
-            const bar = new St.Widget({
+            const bar = new St.BoxLayout({
                 style_class: measurementData.offline
                     ? 'latency-bar latency-offline'
                     : `latency-bar ${this._getLatencyColor(measurementData.latency)}`,
+                x_expand: true,
+                y_expand: false,
             });
             bar.set_height(measurementData.offline
                 ? 52
                 : Math.max(4, Math.round((measurementData.latency / maxLatency) * 48)));
+            if (measurementData.offline) {
+                bar.add_child(new St.Label({
+                    text: '╲╱╲╱╲╱',
+                    style_class: 'latency-offline-marker',
+                    x_expand: true,
+                    y_expand: true,
+                    x_align: Clutter.ActorAlign.CENTER,
+                    y_align: Clutter.ActorAlign.CENTER,
+                }));
+            }
             measurement.add_child(bar);
 
             measurement.add_child(new St.Label({
@@ -205,9 +226,9 @@ class NetworkIndicators extends PanelMenu.Button {
     _getLatencyColor(latency) {
         const latencyMs = Number.parseFloat(latency);
 
-        if (latencyMs < 100)
+        if (latencyMs < 120)
             return 'latency-good';
-        if (latencyMs < 250)
+        if (latencyMs < 200)
             return 'latency-warning';
         return 'latency-bad';
     }
@@ -218,22 +239,39 @@ class NetworkIndicators extends PanelMenu.Button {
         });
     }
 
-    _setMenuIcon(item, filename) {
-        item._icon.gicon = this._getIcon(filename);
+    _createInfoRow(text, iconFilename) {
+        const row = new St.BoxLayout({
+            style_class: 'popup-menu-item',
+            style: 'color: inherit;',
+            x_expand: true,
+            reactive: false,
+        });
+        row.sensitive = true;
+        row.add_child(new St.Icon({
+            gicon: this._getIcon(iconFilename),
+            style_class: 'popup-menu-icon',
+        }));
+        row.label = new St.Label({
+            text,
+            y_expand: true,
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+        row.add_child(row.label);
+        return row;
     }
 
     _getSpeedometerIcon(latency) {
         const latencyMs = Number.parseFloat(latency);
 
-        if (latencyMs < 30)
+        if (latencyMs < 20)
             return this._getIcon('network-excellent-symbolic.svg');
         if (latencyMs < 80)
             return this._getIcon('network-good-symbolic.svg');
-        if (latencyMs < 100)
+        if (latencyMs < 120)
             return this._getIcon('network-ok-symbolic.svg');
-        if (latencyMs < 250)
+        if (latencyMs < 200)
             return this._getIcon('network-weak-symbolic.svg');
-        return this._getIcon('network-offline-symbolic.svg');
+        return this._getIcon('network-bad-symbolic.svg');
     }
 
     getLatency() {

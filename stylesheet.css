@@ -8,7 +8,7 @@
     min-width: 307px;
     min-height: 66px;
     spacing: 3px;
-    padding: 4px 0;
+    padding: 4px 12px;
 }
 
 .latency-measurement {
@@ -19,12 +19,13 @@
 .latency-bar {
     width: 28px;
     min-height: 4px;
-    background-color: -st-accent-color;
-    border-radius: 2px 2px 0 0;
+    background-color: #3584e4;
+    border: 1px solid currentColor;
+    border-radius: 4px;
 }
 
 .latency-bar.latency-good {
-    background-color: -st-accent-color;
+    background-color: #3584e4;
 }
 
 .latency-bar.latency-warning {
@@ -37,6 +38,12 @@
 
 .latency-bar.latency-offline {
     background-color: #888888;
+}
+
+.latency-offline-marker {
+    color: currentColor;
+    font-size: 6px;
+    font-weight: bold;
 }
 
 .latency-label {
