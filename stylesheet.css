@@ -9,6 +9,7 @@
     min-height: 66px;
     spacing: 3px;
     padding: 4px 12px;
+    color: inherit;
 }
 
 .latency-measurement {
@@ -48,6 +49,7 @@
 
 .latency-label {
     width: 28px;
+    color: inherit;
     font-size: 9px;
     text-align: center;
 }
