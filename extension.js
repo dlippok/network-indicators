@@ -78,12 +78,16 @@ class NetworkIndicators extends PanelMenu.Button {
     }
 
     startNetworkRefresh() {
-        this._refreshNetworkInfo();
+        this._refreshNetworkInfo().catch(error => {
+            logError(error, 'Failed to refresh network information');
+        });
         this._refreshTimeoutId = GLib.timeout_add_seconds(
             GLib.PRIORITY_DEFAULT,
             3,
             () => {
-                this._refreshNetworkInfo();
+                this._refreshNetworkInfo().catch(error => {
+                    logError(error, 'Failed to refresh network information');
+                });
                 return GLib.SOURCE_CONTINUE;
             },
         );
@@ -99,10 +103,10 @@ class NetworkIndicators extends PanelMenu.Button {
     async _refreshNetworkInfo() {
         const [ipResult, externalIpResult, gatewayResult, latencyResult] =
             await Promise.allSettled([
-            this.getCurrentIpAddress(),
-            this.getExternalIpAddress(),
-            this.getGatewayAddress(),
-            this.getLatency(),
+                Promise.resolve().then(() => this.getCurrentIpAddress()),
+                Promise.resolve().then(() => this.getExternalIpAddress()),
+                Promise.resolve().then(() => this.getGatewayAddress()),
+                Promise.resolve().then(() => this.getLatency()),
             ]);
 
         if (ipResult.status === 'fulfilled') {
@@ -188,7 +192,7 @@ class NetworkIndicators extends PanelMenu.Button {
 
         for (const measurementData of this._latencyHistory) {
             const measurement = new St.BoxLayout({
-                vertical: true,
+                orientation: Clutter.Orientation.VERTICAL,
                 style_class: 'latency-measurement',
                 y_align: Clutter.ActorAlign.END,
             });
