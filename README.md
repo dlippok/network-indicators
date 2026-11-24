@@ -17,7 +17,7 @@ Then enable it with:
 make enable
 ```
 
-On GNOME Shell 45 and newer, including GNOME Shell 50.4, log out and back in
+On GNOME Shell 45 and newer, including GNOME Shell 51, log out and back in
 if the extension does not appear immediately in Extensions.
 
 ## Development
